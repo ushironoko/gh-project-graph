@@ -101,6 +101,19 @@ watch(
   { deep: true, flush: "post" },
 );
 
+const tryExample = () => {
+  input.value = "github/4247";
+  submit();
+};
+
+const previewCards = [
+  { n: 1182, x: 40, y: 64, state: "done", w: 96, w2: 64 },
+  { n: 1190, x: 232, y: 64, state: "open", w: 88, w2: 72 },
+  { n: 2417, x: 40, y: 176, state: "done", w: 104, w2: 56 },
+  { n: 2431, x: 232, y: 176, state: "open", w: 80, w2: 96 },
+  { n: 2438, x: 328, y: 256, state: "open", w: 72, w2: 48 },
+] as const;
+
 const loadDetail = (node: GraphNode, force: boolean) => {
   void details.load(node, force);
 };
@@ -133,7 +146,7 @@ onMounted(() => {
 
     <p v-if="inputError" class="banner error">{{ inputError }}</p>
     <p v-else-if="project.state.value.status === 'error'" class="banner error">
-      読み込みに失敗しました: {{ project.state.value.message }}
+      読み込みに失敗しました（{{ project.state.value.message }}）
     </p>
 
     <GraphPlane
@@ -150,24 +163,74 @@ onMounted(() => {
     />
 
     <main v-else class="empty">
-      <div v-if="project.state.value.status === 'loading'" class="empty-inner">
-        <p class="big">アイテムを取得中…</p>
+      <div v-if="project.state.value.status === 'loading'" class="loading">
+        <p class="title">アイテムを取得中</p>
         <p class="mono"
-        >{{ project.state.value.loaded }} / {{ project.state.value.total || "?" }}</p>
+        >{{ project.state.value.loaded }} / {{ project.state.value.total || "—" }}</p>
       </div>
-      <div v-else class="empty-inner">
-        <p class="big">GitHub Project の Issue / PR の関係を、時間軸の上に並べて見る</p>
-        <ul>
-          <li>上の欄に Project の URL か <code>OWNER/番号</code> を入れて読み込みます</li>
-          <li>ドラッグ・ホイールで移動、<kbd>⌘</kbd>/<kbd>Ctrl</kbd>+ホイール・ピンチで拡大縮小、<kbd
-            >F</kbd> で全体表示</li>
-          <li>カードをクリックすると、その場で詳細を取得して展開します</li>
-        </ul>
-        <p class="hint">
-          例: <button type="button" class="link" @click="input = 'github/4247'; submit()"
-          >github/4247</button>（GitHub Public
-          Roadmap）
-        </p>
+      <div v-else class="intro">
+        <div class="copy">
+          <h1 class="title">Issue と PR の依存を、作られた順に並べて辿る</h1>
+          <p class="lead">
+            GitHub Project を読み込むと、ブロック・サブIssue・スタックPRなどの関係を線にして、作成日時の横軸に並べます
+          </p>
+          <ol class="steps">
+            <li>上の欄に Project の URL か <code>OWNER/番号</code> を入れる</li>
+            <li>ドラッグで移動、<kbd>⌘</kbd> + ホイールかピンチで拡大縮小、<kbd>F</kbd> で全体表示</li>
+            <li>カードを押すと、その場で詳細を取得して開く</li>
+          </ol>
+          <button type="button" class="example" @click="tryExample">
+            例として <span class="mono">github/4247</span> を開く
+          </button>
+        </div>
+        <figure aria-hidden="true" class="preview">
+          <svg height="320" viewBox="0 0 480 320" width="480">
+            <g class="p-axis">
+              <line x1="0" x2="480" y1="24" y2="24" />
+              <line
+                v-for="x in [40, 160, 280, 400]"
+                :key="x"
+                class="p-tick"
+                :x1="x"
+                :x2="x"
+                y1="24"
+                y2="320"
+              />
+              <text
+                v-for="(t, i) in ['3/2', '3/9', '3/16', '3/23']"
+                :key="t"
+                :x="[40, 160, 280, 400][i]! + 8"
+                y="16"
+              >{{ t }}</text>
+              <line class="p-today" x1="464" x2="464" y1="24" y2="320" />
+              <circle class="p-today-pin" cx="464" cy="24" r="3" />
+            </g>
+            <path class="p-edge blocks" d="M168 92 C200 92 200 92 232 92" />
+            <path class="p-edge closes" d="M104 176 C104 152 104 144 104 120" />
+            <path class="p-edge base" d="M168 204 C200 204 200 204 232 204" />
+            <path class="p-edge stack" d="M296 232 C296 248 392 240 392 256" />
+            <g
+              v-for="c in previewCards"
+              :key="c.n"
+              class="p-card"
+              :transform="`translate(${c.x} ${c.y})`"
+            >
+              <line class="p-pin" x1="0" x2="0" y1="-10" y2="0" />
+              <circle class="p-pin-dot" cx="0" cy="-10" r="2" />
+              <rect height="56" rx="8" width="128" />
+              <circle :class="`p-state ${c.state}`" cx="16" cy="16" r="5" />
+              <text class="p-num" x="28" y="20">#{{ c.n }}</text>
+              <rect class="p-line" x="12" y="30" :width="c.w" height="6" rx="3" />
+              <rect class="p-line" x="12" y="42" :width="c.w2" height="6" rx="3" />
+            </g>
+          </svg>
+          <figcaption>
+            <span><i class="blocks" />ブロック</span>
+            <span><i class="closes" />クローズ</span>
+            <span><i class="base" />ベースブランチ</span>
+            <span><i class="stack" />スタックPR</span>
+          </figcaption>
+        </figure>
       </div>
     </main>
   </div>
@@ -182,61 +245,211 @@ onMounted(() => {
 .banner {
   margin: 0;
   padding: 8px 16px;
-  font-size: 12.5px;
-  border-bottom: 1px solid var(--panel-border);
+  border-bottom: 1px solid var(--line);
+  font-size: 13px;
 }
 .banner.error {
   color: var(--state-closed);
-  background: color-mix(in srgb, var(--state-closed) 8%, var(--panel));
+  background: var(--chrome);
 }
 .empty {
   flex: 1;
   display: grid;
   place-items: center;
-  padding: 24px 16px;
+  padding: 48px 32px;
+  overflow: auto;
   background-color: var(--bg);
-  background-image: radial-gradient(circle at 1px 1px, var(--bg-dot) 1px, transparent 1.2px);
+  background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.2px);
   background-size: 28px 28px;
 }
-.empty-inner {
-  max-width: 560px;
+.intro {
+  display: grid;
+  grid-template-columns: minmax(0, 440px) minmax(0, 480px);
+  gap: 64px;
+  align-items: center;
+  max-width: 1040px;
+}
+.copy {
+  display: grid;
+  gap: 24px;
+  justify-items: start;
+}
+.title {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 500;
+  line-height: 36px;
+}
+.loading {
+  display: grid;
+  gap: 8px;
+  justify-items: center;
+}
+.loading .title {
+  font-size: 20px;
+  line-height: 28px;
+}
+.lead {
+  margin: 0;
+  color: var(--text-2);
+  font-size: 15px;
+  line-height: 24px;
+}
+.steps {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding-left: 20px;
+  color: var(--text-2);
+}
+.steps li::marker {
+  font-family: var(--font-mono);
   color: var(--muted);
-  line-height: 1.7;
-}
-.big {
-  margin: 0 0 12px;
-  color: var(--text);
-  font-size: 18px;
-  font-weight: 700;
-  letter-spacing: -0.01em;
-  line-height: 1.4;
-}
-.empty ul {
-  margin: 0 0 12px;
-  padding-left: 1.2em;
 }
 .mono,
-code,
-kbd {
+code {
   font-family: var(--font-mono);
   font-size: 12px;
 }
+.loading .mono {
+  color: var(--muted);
+}
 kbd {
   padding: 0 4px;
-  border: 1px solid var(--panel-border);
-  border-bottom-width: 2px;
+  border: 1px solid var(--line-strong);
   border-radius: 4px;
-  background: var(--panel);
+  background: var(--card);
+  font: 11px/16px var(--font-mono);
+  color: var(--text-2);
 }
-.link {
-  padding: 0;
-  border: 0;
-  background: none;
-  color: var(--accent);
+.example {
+  height: 36px;
+  padding: 0 16px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  color: var(--text);
   cursor: pointer;
-  font-family: var(--font-mono);
+  transition:
+    border-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
 }
-.link:hover {
-  text-decoration: underline;
+.example:hover {
+  border-color: var(--line-strong);
+}
+.example:active {
+  transform: scale(0.98);
+}
+.preview {
+  display: grid;
+  gap: 12px;
+  margin: 0;
+  padding: 16px;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  background: var(--chrome);
+  box-shadow: var(--float-shadow);
+}
+.preview svg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.p-axis line {
+  stroke: var(--line-strong);
+}
+.p-axis .p-tick {
+  stroke: var(--line);
+}
+.p-axis text {
+  font: 11px var(--font-mono);
+  fill: var(--muted);
+}
+.p-today {
+  stroke: var(--accent) !important;
+  stroke-dasharray: 4 4;
+}
+.p-today-pin {
+  fill: var(--accent);
+}
+.p-card rect:first-of-type {
+  fill: var(--card);
+  stroke: var(--line-strong);
+}
+.p-pin {
+  stroke: var(--muted);
+}
+.p-pin-dot {
+  fill: var(--muted);
+}
+.p-num {
+  font: 11px var(--font-mono);
+  fill: var(--text-2);
+}
+.p-line {
+  fill: var(--raised);
+}
+.p-state {
+  fill: none;
+  stroke-width: 1.5;
+}
+.p-state.open {
+  stroke: var(--state-open);
+}
+.p-state.done {
+  stroke: var(--state-done);
+}
+.p-edge {
+  fill: none;
+  stroke-width: 2;
+}
+.p-edge.blocks,
+figcaption .blocks {
+  stroke: var(--edge-blocks);
+  background: var(--edge-blocks);
+}
+.p-edge.closes,
+figcaption .closes {
+  stroke: var(--edge-closes);
+  background: var(--edge-closes);
+}
+.p-edge.base {
+  stroke: var(--edge-base);
+  stroke-dasharray: 8 4;
+}
+figcaption .base {
+  background: var(--edge-base);
+}
+.p-edge.stack,
+figcaption .stack {
+  stroke: var(--edge-stack);
+  stroke-width: 3;
+  background: var(--edge-stack);
+}
+figcaption {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  color: var(--muted);
+  font-size: 12px;
+}
+figcaption span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+figcaption i {
+  width: 16px;
+  height: 2px;
+}
+@media (max-width: 960px) {
+  .intro {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 40px;
+  }
+  .title {
+    font-size: 24px;
+    line-height: 32px;
+  }
 }
 </style>

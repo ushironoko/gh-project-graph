@@ -61,11 +61,10 @@ const pxLabel = computed(() =>
   <header class="toolbar">
     <div class="row primary">
       <div class="brand">
-        <svg aria-hidden="true" height="18" viewBox="0 0 18 18" width="18">
-          <circle cx="4" cy="5" r="2.4" />
-          <circle cx="14" cy="4" r="2.4" />
-          <circle cx="10" cy="14" r="2.4" />
-          <path d="M6.2 5.6 11.8 4.4M5.3 7 8.9 12M13.2 6.3 11 11.8" />
+        <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16">
+          <path d="M1.5 12.5 5.5 6l4 3.5 5-6.5" />
+          <circle cx="5.5" cy="6" r="1.75" />
+          <circle cx="9.5" cy="9.5" r="1.75" />
         </svg>
         <span>Project Graph</span>
       </div>
@@ -74,30 +73,31 @@ const pxLabel = computed(() =>
           v-model="input"
           aria-label="GitHub Project"
           autocomplete="off"
-          placeholder="https://github.com/orgs/OWNER/projects/1 または OWNER/1"
+          placeholder="Project の URL か OWNER/番号"
           spellcheck="false"
           type="text"
         />
         <button type="submit" :disabled="state.status === 'loading'">
-          {{ state.status === "loading" ? "読み込み中…" : "読み込む" }}
+          {{ state.status === "loading" ? "読み込み中" : "読み込む" }}
         </button>
       </form>
-      <a
-        v-if="state.status === 'ready'"
-        class="project-link"
-        :href="safeHref(state.url)"
-        rel="noopener noreferrer"
-        target="_blank"
-      >
-        {{ state.title }} ↗
-      </a>
-      <div v-if="state.status === 'ready'" class="counts">
-        <span><b>{{ counts.issues }}</b> Issue</span>
-        <span><b>{{ counts.prs }}</b> PR</span>
-        <span v-if="counts.drafts"><b>{{ counts.drafts }}</b> Draft</span>
-        <span v-if="counts.external"><b>{{ counts.external }}</b> 外部</span>
-        <span><b>{{ counts.edges }}</b> 関係</span>
-      </div>
+      <template v-if="state.status === 'ready'">
+        <a
+          class="project-link"
+          :href="safeHref(state.url)"
+          rel="noopener noreferrer"
+          target="_blank"
+        >{{
+          state.title
+        }}</a>
+        <dl class="counts">
+          <div><dt>Issue</dt><dd>{{ counts.issues }}</dd></div>
+          <div><dt>PR</dt><dd>{{ counts.prs }}</dd></div>
+          <div v-if="counts.drafts"><dt>Draft</dt><dd>{{ counts.drafts }}</dd></div>
+          <div v-if="counts.external"><dt>Project外</dt><dd>{{ counts.external }}</dd></div>
+          <div><dt>関係</dt><dd>{{ counts.edges }}</dd></div>
+        </dl>
+      </template>
     </div>
 
     <div v-if="state.status === 'ready'" class="row secondary">
@@ -112,8 +112,8 @@ const pxLabel = computed(() =>
           :title="edgeLabels[kind].hint"
           @click="emit('toggleKind', kind)"
         >
-          <svg aria-hidden="true" height="8" width="22">
-            <line x1="1" x2="21" y1="4" y2="4" :class="`k-${kind}`" />
+          <svg aria-hidden="true" height="8" width="20">
+            <line x1="0" x2="20" y1="4" y2="4" :class="`k-${kind}`" />
           </svg>
           {{ edgeLabels[kind].label }}
           <span class="n">{{ kindCounts[kind] }}</span>
@@ -126,8 +126,8 @@ const pxLabel = computed(() =>
         <label><input v-model="hideIsolated" type="checkbox" />関係ありのみ</label>
       </div>
 
-      <label class="scale" title="横軸（時間）の密度">
-        時間
+      <label class="scale" title="横軸の密度">
+        時間軸
         <input v-model.number="slider" max="1000" min="0" step="1" type="range" />
         <span class="mono">{{ pxLabel }}</span>
       </label>
@@ -135,8 +135,8 @@ const pxLabel = computed(() =>
       <form class="search" @submit.prevent="emit('nextMatch', 1)">
         <input
           v-model="query"
-          aria-label="検索"
-          placeholder="タイトル・#番号で検索"
+          aria-label="タイトルか #番号 で検索"
+          placeholder="検索"
           type="search"
           @keydown.shift.enter.prevent="emit('nextMatch', -1)"
         />
@@ -152,83 +152,116 @@ const pxLabel = computed(() =>
 .toolbar {
   position: relative;
   display: grid;
-  gap: 8px;
-  padding: 10px 16px;
-  border-bottom: 1px solid var(--panel-border);
-  background: var(--panel);
+  border-bottom: 1px solid var(--line);
+  background: var(--chrome);
   z-index: 40;
 }
 .row {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 10px 18px;
+  gap: 8px 24px;
   min-width: 0;
+  padding: 0 16px;
+}
+.primary {
+  min-height: 56px;
+}
+.secondary {
+  min-height: 44px;
+  padding-bottom: 8px;
+  gap: 8px 16px;
 }
 .brand {
   display: flex;
   align-items: center;
   gap: 8px;
-  font-weight: 700;
-  font-size: 14px;
-  letter-spacing: -0.01em;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
 }
 .brand svg {
-  fill: var(--accent);
-  stroke: var(--accent);
-  stroke-width: 1.4;
+  fill: var(--chrome);
+  stroke: var(--text);
+  stroke-width: 1.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 .load {
   display: flex;
-  flex: 1 1 360px;
-  max-width: 560px;
+  gap: 8px;
+  flex: 1 1 320px;
+  max-width: 520px;
   min-width: 0;
 }
-.load input,
-.search input {
+input[type="text"],
+input[type="search"] {
   flex: 1;
   min-width: 0;
   height: 32px;
-  padding: 0 10px;
-  border: 1px solid var(--panel-border);
-  border-radius: 8px 0 0 8px;
-  background: var(--bg);
+  padding: 0 12px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--raised);
+  transition: border-color var(--fast) var(--ease);
+}
+input[type="text"]:hover,
+input[type="search"]:hover {
+  border-color: var(--line-strong);
 }
 .load button {
+  flex: none;
   height: 32px;
-  padding: 0 14px;
-  border: 1px solid var(--accent);
-  border-radius: 0 8px 8px 0;
-  background: var(--accent);
-  color: #fff;
-  font-weight: 600;
+  padding: 0 16px;
+  border: 0;
+  border-radius: 8px;
+  background: var(--primary-fill);
+  color: var(--on-primary);
+  font-weight: 500;
   cursor: pointer;
+  transition:
+    opacity var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
+}
+.load button:active {
+  transform: scale(0.98);
 }
 .load button:disabled {
   opacity: 0.6;
   cursor: progress;
 }
 .project-link {
-  color: var(--text);
-  font-weight: 600;
-  text-decoration: none;
+  max-width: 320px;
   overflow: hidden;
+  color: var(--text);
+  font-weight: 500;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 320px;
+  text-decoration: underline;
+  text-decoration-color: var(--line-strong);
+  text-underline-offset: 4px;
+  transition: text-decoration-color var(--fast) var(--ease);
 }
 .project-link:hover {
-  color: var(--accent);
+  text-decoration-color: currentColor;
 }
 .counts {
   display: flex;
-  gap: 12px;
-  color: var(--muted);
+  gap: 16px;
+  margin: 0;
   font-size: 12px;
 }
-.counts b {
-  color: var(--text);
+.counts div {
+  display: flex;
+  gap: 4px;
+}
+.counts dt {
+  color: var(--muted);
+}
+.counts dd {
+  margin: 0;
   font-family: var(--font-mono);
+  color: var(--text-2);
 }
 .legend {
   display: flex;
@@ -238,26 +271,29 @@ const pxLabel = computed(() =>
 .kind {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  height: 26px;
-  padding: 0 9px;
-  border: 1px solid var(--panel-border);
-  border-radius: 999px;
-  background: var(--card);
-  cursor: pointer;
+  gap: 8px;
+  height: 28px;
+  padding: 0 8px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--raised);
+  color: var(--text);
   font-size: 12px;
+  cursor: pointer;
+  transition:
+    opacity var(--fast) var(--ease),
+    background-color var(--fast) var(--ease);
 }
 .kind.off {
-  opacity: 0.4;
+  opacity: 0.48;
   background: none;
 }
 .kind .n {
   font-family: var(--font-mono);
-  font-size: 11px;
   color: var(--muted);
 }
 .kind line {
-  stroke-width: 2.4;
+  stroke-width: 2;
 }
 .k-blocks {
   stroke: var(--edge-blocks);
@@ -267,62 +303,61 @@ const pxLabel = computed(() =>
 }
 .k-relates {
   stroke: var(--edge-relates);
-  stroke-dasharray: 4 3;
+  stroke-dasharray: 4 4;
 }
 .k-duplicate {
   stroke: var(--edge-duplicate);
-  stroke-dasharray: 1.5 3;
+  stroke-dasharray: 2 4;
 }
 .k-closes {
   stroke: var(--edge-closes);
 }
 .k-base {
   stroke: var(--edge-base);
-  stroke-dasharray: 6 3;
+  stroke-dasharray: 8 4;
 }
 .k-stack {
   stroke: var(--edge-stack);
-  stroke-width: 3.4;
+  stroke-width: 3;
 }
 .toggles {
   display: flex;
-  gap: 12px;
-  color: var(--muted);
-  font-size: 12px;
+  gap: 16px;
 }
 .toggles label,
 .scale {
   display: inline-flex;
   align-items: center;
-  gap: 5px;
+  gap: 8px;
+  color: var(--text-2);
+  font-size: 12px;
   cursor: pointer;
 }
-.scale {
-  color: var(--muted);
-  font-size: 12px;
+.toggles input {
+  margin: 0;
+  accent-color: var(--text);
 }
 .scale input {
-  width: 130px;
-  accent-color: var(--accent);
+  width: 128px;
+  accent-color: var(--text);
 }
 .mono {
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
+  color: var(--muted);
 }
 .search {
   display: flex;
   align-items: center;
   gap: 8px;
-  margin-left: auto;
-  flex: 0 1 260px;
+  flex: 0 1 240px;
   min-width: 160px;
+  margin-left: auto;
 }
 .search input {
   height: 28px;
-  border-radius: 8px;
 }
 .match {
-  color: var(--muted);
   flex: none;
 }
 .progress {
@@ -333,15 +368,12 @@ const pxLabel = computed(() =>
   height: 2px;
   background: var(--accent);
   transform-origin: 0 0;
-  transition: transform 0.2s;
+  transition: transform 300ms var(--ease);
 }
 @media (max-width: 720px) {
-  .toolbar {
-    padding: 10px 16px;
-  }
   .search {
-    margin-left: 0;
     flex-basis: 100%;
+    margin-left: 0;
   }
 }
 </style>

@@ -27,7 +27,7 @@ const { nodes, edges, layout, pxPerDay, query, entries, fitKey } = defineProps<{
 const emit = defineEmits<{ loadDetail: [node: GraphNode, force: boolean] }>();
 
 const DAY = 86_400_000;
-const AXIS_HEIGHT = 30;
+const AXIS_HEIGHT = 32;
 
 const root = ref<HTMLElement | null>(null);
 const { viewport, size, dragging, zoomBy } = useViewport(root);
@@ -294,6 +294,7 @@ defineExpose({ fit, focusNextMatch, matchCount: computed(() => matches.value?.le
         :class="{ major: t.major }"
       />
       <line class="today" :x1="todayX" :x2="todayX" :y1="AXIS_HEIGHT" y2="100%" />
+      <circle class="today-pin" :cx="todayX" :cy="AXIS_HEIGHT" r="3" />
     </svg>
 
     <div class="world" :style="worldStyle">
@@ -329,10 +330,17 @@ defineExpose({ fit, focusNextMatch, matchCount: computed(() => matches.value?.le
     </div>
 
     <div class="controls" @pointerdown.stop>
-      <button type="button" title="縮小 (-)" @click="zoomBy(0.8)">−</button>
+      <button type="button" aria-label="縮小" title="縮小" @click="zoomBy(0.8)">
+        <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16"><path d="M3.5 8h9" /></svg>
+      </button>
       <span class="zoom">{{ zoomPercent }}</span>
-      <button type="button" title="拡大 (+)" @click="zoomBy(1.25)">+</button>
-      <button type="button" class="fit" title="全体を表示 (F)" @click="fit">全体</button>
+      <button type="button" aria-label="拡大" title="拡大" @click="zoomBy(1.25)">
+        <svg aria-hidden="true" height="16" viewBox="0 0 16 16" width="16"><path
+            d="M3.5 8h9M8 3.5v9"
+          /></svg>
+      </button>
+      <span aria-hidden="true" class="sep" />
+      <button type="button" class="fit" @click="fit">全体<kbd>F</kbd></button>
     </div>
   </div>
 </template>
@@ -344,7 +352,7 @@ defineExpose({ fit, focusNextMatch, matchCount: computed(() => matches.value?.le
   min-height: 0;
   overflow: hidden;
   background-color: var(--bg);
-  background-image: radial-gradient(circle at 1px 1px, var(--bg-dot) 1px, transparent 1.2px);
+  background-image: radial-gradient(circle at 1px 1px, var(--dot) 1px, transparent 1.2px);
   cursor: grab;
   touch-action: none;
   user-select: none;
@@ -364,16 +372,18 @@ defineExpose({ fit, focusNextMatch, matchCount: computed(() => matches.value?.le
   pointer-events: none;
 }
 .grid line {
-  stroke: var(--grid-line);
+  stroke: var(--line);
   stroke-width: 1;
 }
 .grid line.major {
-  stroke: var(--grid-major);
+  stroke: var(--line-strong);
 }
 .grid line.today {
-  stroke: var(--today);
+  stroke: var(--accent);
   stroke-dasharray: 4 4;
-  opacity: 0.7;
+}
+.today-pin {
+  fill: var(--accent);
 }
 .world {
   position: absolute;
@@ -385,10 +395,9 @@ defineExpose({ fit, focusNextMatch, matchCount: computed(() => matches.value?.le
 .axis {
   position: absolute;
   inset: 0 0 auto;
-  height: 30px;
-  border-bottom: 1px solid var(--panel-border);
-  background: color-mix(in srgb, var(--panel) 88%, transparent);
-  backdrop-filter: blur(6px);
+  height: 32px;
+  border-bottom: 1px solid var(--line);
+  background: var(--chrome);
   overflow: hidden;
   pointer-events: none;
   z-index: 30;
@@ -397,24 +406,22 @@ defineExpose({ fit, focusNextMatch, matchCount: computed(() => matches.value?.le
   position: absolute;
   left: 0;
   top: 0;
-  height: 30px;
-  padding: 0 6px;
-  border-left: 1px solid var(--grid-major);
-  font: 11px/30px var(--font-mono);
+  padding: 0 8px;
+  border-left: 1px solid var(--line-strong);
+  font: 12px/32px var(--font-mono);
   color: var(--muted);
   white-space: nowrap;
 }
 .tick.major {
   color: var(--text);
-  font-weight: 700;
-  border-left-color: var(--muted);
+  font-weight: 500;
 }
 .today-label {
-  border-left: 2px solid var(--today);
-  color: var(--today);
+  border-left-color: var(--accent);
+  color: var(--accent);
   font-family: var(--font-ui);
-  font-weight: 600;
-  background: color-mix(in srgb, var(--panel) 92%, transparent);
+  font-weight: 500;
+  background: var(--chrome);
 }
 .controls {
   position: absolute;
@@ -422,35 +429,63 @@ defineExpose({ fit, focusNextMatch, matchCount: computed(() => matches.value?.le
   bottom: 16px;
   display: flex;
   align-items: center;
-  gap: 2px;
+  gap: 4px;
   padding: 4px;
-  border: 1px solid var(--panel-border);
-  border-radius: 10px;
-  background: var(--panel);
-  box-shadow: var(--card-shadow);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--chrome);
+  box-shadow: var(--float-shadow);
   z-index: 30;
   cursor: default;
 }
 .controls button {
-  min-width: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-width: 28px;
   height: 28px;
   padding: 0 8px;
   border: 0;
-  border-radius: 6px;
+  border-radius: 8px;
   background: none;
+  color: var(--text-2);
+  font-size: 12px;
   cursor: pointer;
-  font-size: 15px;
+  transition:
+    background-color var(--fast) var(--ease),
+    transform var(--fast) var(--ease);
 }
 .controls button:hover {
-  background: color-mix(in srgb, var(--text) 8%, transparent);
+  background: var(--raised);
+  color: var(--text);
 }
-.controls .fit {
-  font-size: 12px;
+.controls button:active {
+  transform: scale(0.97);
+}
+.controls svg {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.5;
+  stroke-linecap: round;
+}
+.sep {
+  width: 1px;
+  height: 16px;
+  background: var(--line);
+}
+kbd {
+  min-width: 16px;
+  padding: 0 4px;
+  border: 1px solid var(--line-strong);
+  border-radius: 4px;
+  font: 11px/16px var(--font-mono);
+  color: var(--muted);
 }
 .zoom {
   min-width: 44px;
   text-align: center;
-  font: 11.5px var(--font-mono);
+  font: 12px var(--font-mono);
   color: var(--muted);
 }
 </style>

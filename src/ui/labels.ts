@@ -20,6 +20,50 @@ export const edgeVerb: Record<EdgeKind, string> = {
   stack: "stacks under",
 };
 
+export const relationText: Record<EdgeKind, { out: string; in: string }> = {
+  blocks: { out: "ブロックしている", in: "ブロックされている" },
+  parent: { out: "サブIssue", in: "親Issue" },
+  relates: { out: "関連", in: "関連" },
+  duplicate: { out: "重複先", in: "重複元" },
+  closes: { out: "クローズする", in: "クローズするPR" },
+  base: { out: "上に載るPR", in: "土台のPR" },
+  stack: { out: "上の段", in: "下の段" },
+};
+
+export type SignalTone = "ok" | "bad" | "neutral";
+
+const checkLabels: Record<string, { label: string; tone: SignalTone }> = {
+  SUCCESS: { label: "成功", tone: "ok" },
+  FAILURE: { label: "失敗", tone: "bad" },
+  ERROR: { label: "エラー", tone: "bad" },
+  PENDING: { label: "実行中", tone: "neutral" },
+  EXPECTED: { label: "待機中", tone: "neutral" },
+};
+
+export const checkLabel = (state: string) =>
+  checkLabels[state] ?? { label: state, tone: "neutral" as const };
+
+const decisionLabels: Record<string, string> = {
+  APPROVED: "承認済み",
+  CHANGES_REQUESTED: "変更要求あり",
+  REVIEW_REQUIRED: "レビュー待ち",
+};
+
+export const decisionLabel = (state: string) => decisionLabels[state] ?? state;
+
+const reviewLabels: Record<string, string> = {
+  APPROVED: "承認",
+  CHANGES_REQUESTED: "変更要求",
+  COMMENTED: "コメント",
+  DISMISSED: "取り下げ",
+  PENDING: "下書き",
+};
+
+export const reviewLabel = (state: string) => reviewLabels[state] ?? state;
+
+export const toneOfReview = (state: string): SignalTone =>
+  state === "APPROVED" ? "ok" : state === "CHANGES_REQUESTED" ? "bad" : "neutral";
+
 export const stateLabels: Record<NodeState, string> = {
   open: "Open",
   completed: "Closed",

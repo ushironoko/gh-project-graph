@@ -62,10 +62,10 @@ const directed = (kind: EdgeKind) => kind !== "relates";
 }
 .edge {
   fill: none;
-  stroke-width: calc(1.6px * var(--s));
-  opacity: 0.75;
+  stroke-width: calc(1.5px * var(--s));
+  opacity: 0.8;
   pointer-events: stroke;
-  transition: opacity 0.15s;
+  transition: opacity var(--fast) var(--ease);
 }
 .edge.active {
   stroke-width: calc(2.6px * var(--s));
@@ -79,7 +79,7 @@ const directed = (kind: EdgeKind) => kind !== "relates";
 }
 .kind-parent {
   stroke: var(--edge-parent);
-  stroke-width: calc(2.2px * var(--s));
+  stroke-width: calc(2px * var(--s));
 }
 .kind-relates {
   stroke: var(--edge-relates);
