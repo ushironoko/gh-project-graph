@@ -1,0 +1,22 @@
+{
+  "name": "gh-project-graph",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "bun run build.ts",
+    "start": "bun run build.ts && bun run server.ts",
+    "test": "bun test",
+    "fmt": "vize fmt --write src",
+    "lint": "vize lint src",
+    "check": "vize check"
+  },
+  "dependencies": {
+    "vue": "3.5.45"
+  },
+  "devDependencies": {
+    "@types/bun": "1.4.4",
+    "@vizejs/unplugin": "0.746.0",
+    "typescript": "7.1.0-beta",
+    "vize": "0.746.0"
+  }
+}
