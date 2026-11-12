@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onBeforeMount, ref, shallowRef } from "vue";
+import { computed, onBeforeMount, onBeforeUnmount, ref, shallowRef } from "vue";
 
 const { html } = defineProps<{ html: string }>();
 
@@ -16,7 +16,8 @@ onBeforeMount(() => {
 const css = (text: string) => `
 :root { color-scheme: light dark; --fg: ${text}; }
 html, body { margin: 0; background: transparent; }
-body { font: 13px/1.6 ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", sans-serif; color: var(--fg); overflow-wrap: anywhere; }
+html { overflow: hidden; }
+body { font: 13px/1.6 ui-sans-serif, system-ui, -apple-system, "Hiragino Sans", sans-serif; color: var(--fg); overflow-wrap: anywhere; display: flow-root; }
 body > :first-child { margin-top: 0; }
 body > :last-child { margin-bottom: 0; }
 a { color: inherit; text-decoration-color: color-mix(in srgb, var(--fg) 40%, transparent); text-underline-offset: 3px; }
@@ -39,14 +40,22 @@ const srcdoc = computed(
     `<base target="_blank"><style>${css(textColor.value)}</style></head><body>${html}</body></html>`,
 );
 
-const measure = () => {
-  const doc = frame.value?.contentDocument;
-  if (!doc) return;
-  height.value = Math.ceil(doc.documentElement.scrollHeight);
-  doc
-    .querySelectorAll("img")
-    .forEach((img) => img.addEventListener("load", measure, { once: true }));
+let observer: ResizeObserver | null = null;
+
+const fit = (body: HTMLElement) => {
+  height.value = Math.ceil(body.getBoundingClientRect().height);
 };
+
+const track = () => {
+  observer?.disconnect();
+  const body = frame.value?.contentDocument?.body;
+  if (!body) return;
+  fit(body);
+  observer = new ResizeObserver(() => fit(body));
+  observer.observe(body);
+};
+
+onBeforeUnmount(() => observer?.disconnect());
 </script>
 
 <template>
@@ -58,7 +67,7 @@ const measure = () => {
     title="本文"
     :srcdoc="srcdoc"
     :style="{ height: `${height}px` }"
-    @load="measure"
+    @load="track"
   />
 </template>
 

@@ -242,6 +242,7 @@ const subProgress = computed(() => {
   border-top: 1px solid var(--line);
   overflow: auto;
   overscroll-behavior: contain;
+  scrollbar-gutter: stable;
   cursor: auto;
   user-select: text;
   animation: rise var(--enter) var(--ease);
